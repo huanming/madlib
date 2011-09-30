@@ -197,8 +197,20 @@ if(POSTGRESQL_FOUND)
         
     # END Legacy Code
     add_custom_target(sqlFiles_Postgres ALL DEPENDS ${SQL_TARGET_FILES_POSTGRES})
-    
-# -- 7. Install all Python/SQL files -------------------------------------------
+
+# -- 7. Copy all benchmark files -----------------------------------------------
+
+    file(GLOB_RECURSE BENCHMARK_FILES_POSTGRES
+        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+        "benchmark/*.py"
+        "__init__.py"
+    )
+    add_files(BENCHMARK_TARGET_FILES_POSTGRES . "${CMAKE_CURRENT_BINARY_DIR}"
+        ${BENCHMARK_FILES_POSTGRES})
+    add_custom_target(benchmarkFiles_Postgres ALL
+        DEPENDS ${BENCHMARK_TARGET_FILES_POSTGRES})
+
+# -- 8. Install all Python/SQL files -------------------------------------------
 
     install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules
         DESTINATION ports/postgres
@@ -206,7 +218,20 @@ if(POSTGRESQL_FOUND)
         REGEX "^(.*/)?\\.DS_Store\$" EXCLUDE
     )
 
+# -- 9. Install all Benchmark Python files -------------------------------------
+
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        DESTINATION port/postgres
+        USE_SOURCE_PERMISSIONS
+        COMPONENT benchmark
+        FILES_MATCHING
+        PATTERN "benchmark/*.py"
+        PATTERN ".DS_Store" EXCLUDE
+    )
+
+
     add_subdirectory(madpack)
+    add_subdirectory(benchmark)
 else(POSTGRESQL_FOUND)
     message(STATUS "***")
     message(STATUS "*** No PostgreSQL installation found. Skipping.")
