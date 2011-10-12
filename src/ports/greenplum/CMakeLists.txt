@@ -242,37 +242,13 @@ if(GREENPLUM_FOUND)
     # END Legacy Code
     add_custom_target(sqlFiles_Greenplum ALL DEPENDS ${SQL_TARGET_FILES_GREENPLUM})
 
-# -- 7. Copy all benchmark files -----------------------------------------------
-
-    file(GLOB_RECURSE BENCHMARK_FILES_GREENPLUM
-        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-        "benchmark/*.py"
-        "__init__.py"
-    )
-    add_files(BENCHMARK_TARGET_FILES_GREENPLUM . "${CMAKE_CURRENT_BINARY_DIR}"
-        ${BENCHMARK_FILES_GREENPLUM})
-    add_custom_target(benchmarkFiles_Greenplum ALL
-        DEPENDS ${BENCHMARK_TARGET_FILES_GREENPLUM})
-
-# -- 8. Install all Python/SQL files -------------------------------------------
+# -- 7. Install all Python/SQL files -------------------------------------------
 
     install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules
         DESTINATION ports/greenplum
         COMPONENT greenplum
         REGEX "^(.*/)?\\.DS_Store\$" EXCLUDE
-    )
-
-# -- 9. Install all Benchmark Python files -------------------------------------
-
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DESTINATION port/greenplum
-        USE_SOURCE_PERMISSIONS
-        COMPONENT benchmark
-        FILES_MATCHING
-        PATTERN "benchmark/*.py"
-        PATTERN ".DS_Store" EXCLUDE
-    )
-    
+    )    
 
     add_subdirectory(madpack)
 else(GREENPLUM_FOUND)
@@ -280,3 +256,28 @@ else(GREENPLUM_FOUND)
     message(STATUS "*** No Greenplum installation found. Skipping.")
     message(STATUS "***")
 endif(GREENPLUM_FOUND)
+
+
+# -- 8. Copy all benchmark files. This we will always do, even if no Greenplum
+#       installation is found while building. ----------------------------------
+
+file(GLOB_RECURSE BENCHMARK_FILES_GREENPLUM
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "benchmark/*.py"
+    "__init__.py"
+)
+add_files(BENCHMARK_TARGET_FILES_GREENPLUM . "${CMAKE_CURRENT_BINARY_DIR}"
+    ${BENCHMARK_FILES_GREENPLUM})
+add_custom_target(benchmarkFiles_Greenplum ALL
+    DEPENDS ${BENCHMARK_TARGET_FILES_GREENPLUM})
+
+# -- 9. Install all Benchmark Python files -------------------------------------
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DESTINATION port/greenplum
+    USE_SOURCE_PERMISSIONS
+    COMPONENT benchmark
+    FILES_MATCHING
+    PATTERN "benchmark/*.py"
+    PATTERN ".DS_Store" EXCLUDE
+)
