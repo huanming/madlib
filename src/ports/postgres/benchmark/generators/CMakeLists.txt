@@ -9,4 +9,10 @@ if(Boost_FOUND)
         OUTPUT_NAME LinearRegressionRandom
     )
     target_link_libraries(PGTestLinearRegressionRandom ${Boost_PROGRAM_OPTIONS_LIBRARY})
+
+    add_executable(PGTestLogisticRegressionRandom PGLogisticRegressionRandom.cpp)
+    set_target_properties(PGTestLogisticRegressionRandom PROPERTIES
+        OUTPUT_NAME LogisticRegressionRandom
+    )
+    target_link_libraries(PGTestLogisticRegressionRandom ${Boost_PROGRAM_OPTIONS_LIBRARY})
 endif()
