@@ -111,7 +111,7 @@ class Controller:
     def __init__(self, env, os_tools, logger):
         self.env = PlatformEnvironment(env, self)
         self.os_tools = os_tools
-        self.logger
+        self.logger=logger
     
     def _data_dir(self):
         return self.runSQL('''SELECT current_setting('data_directory')''',
@@ -120,12 +120,20 @@ class Controller:
     def _long_version(self):
         return self.runSQL('''SELECT version()''',
             ['--no-align', '--tuples-only'])
-    
+
     def stopServer(self):
         subprocess.Popen(['pg_ctl', 'stop', '-D', self.env.data_dir]).wait()
+        pass
 
     def startServer(self):
         subprocess.Popen(['pg_ctl', 'start', '-D', self.env.data_dir]).wait()
+        import time
+        while True:
+            try:
+                self.runSQL('select version();')
+                break
+            except PSQLError as e:
+                time.sleep(1)
     
     def runSQL(self, sql, psqlArgs = None):
         """
