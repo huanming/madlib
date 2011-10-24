@@ -32,6 +32,58 @@ class LinearRegressionRandom : public FormatPolicy {
     using FormatPolicy::printTableRow;
 
 protected:
+    class LinearRegressionArgs {
+    public:
+        LinearRegressionArgs(int inArgC, char* inArgVec[]) {
+            namespace po = boost::program_options;
+            try {
+                po::options_description desc("Allowed options");
+                desc.add_options()
+                    ("help,h", "produce help message")
+                    ("ivariables,i", po::value(&numIndVars)->default_value(5),
+                        "number of independent variables")
+                    ("rows,r", po::value(&numRows)->default_value(100),
+                        "number of rows")
+                    ("stddev,d", po::value(&stdDev)->default_value(1.),
+                        "standard deviation of noise term")
+                    ("coef-seed", po::value<>(&coefSeed)->default_value(0),
+                        "seed for random-number generator for generating coefficients")
+                    ("table-seed", po::value<>(&tableSeed)->default_value(1),
+                        "seed for random-number generator for generating table")
+                    ("coef,c", "generate coefficients")
+                    ("table,t", "generate table of data points")
+                ;
+
+                po::variables_map vm;
+                po::store(po::parse_command_line(inArgC, inArgVec, desc), vm);
+                po::notify(vm);
+
+                outputIsCoefOnly = vm.count("coef") > 0;
+
+                if (vm.count("help") ||
+                    vm.count("coef") + vm.count("table") != 1) {
+                    
+                    std::cout << desc << "\n";
+                    exit(EXIT_FAILURE);
+                }
+            } catch(std::exception& e) {
+                std::cerr << "error: " << e.what() << "\n";
+                exit(EXIT_FAILURE);
+            } catch(...) {
+                std::cerr << "Exception of unknown type!\n";
+                exit(EXIT_FAILURE);
+            }
+        }
+    
+        uint32_t numIndVars;
+        uint64_t numRows;
+        double stdDev;
+        uint32_t coefSeed;
+        uint32_t tableSeed;
+        bool outputIsCoefOnly;
+    };
+
+    LinearRegressionArgs args;
     boost::uniform_real<> uniformDist;
     boost::normal_distribution<> normalDist;
     boost::mt19937 randomNoGenerator;
@@ -40,86 +92,41 @@ protected:
     boost::variate_generator<boost::mt19937&, boost::normal_distribution<> >
         normalVariate;
 
-public:
-    uint32_t numIndVars;
-    uint64_t numRows;
-    double stdDev;
-    uint32_t coefSeed;
-    uint32_t tableSeed;
-    bool outputIsCoefOnly;
-    
     std::vector<double> coef;
 
+public:    
     LinearRegressionRandom(int inArgC, char* inArgVec[])
-      : uniformDist(-1, 1),
-        normalDist(0, stdDev),
+      : args(inArgC, inArgVec),
+        uniformDist(-1, 1),
+        normalDist(0, args.stdDev),
         uniformVariate(randomNoGenerator, uniformDist),
         normalVariate(randomNoGenerator, normalDist) {
         
-        namespace po = boost::program_options;
-        try {
-            po::options_description desc("Allowed options");
-            desc.add_options()
-                ("help,h", "produce help message")
-                ("ivariables,i", po::value(&numIndVars)->default_value(5),
-                    "number of independent variables")
-                ("rows,r", po::value(&numRows)->default_value(100),
-                    "number of rows")
-                ("stddev,d", po::value(&stdDev)->default_value(1.),
-                    "standard deviation of noise term")
-                ("coef-seed", po::value<>(&coefSeed)->default_value(0),
-                    "seed for random-number generator for generating coefficients")
-                ("table-seed", po::value<>(&tableSeed)->default_value(1),
-                    "seed for random-number generator for generating table")
-                ("coef,c", "generate coefficients")
-                ("table,t", "generate table of data points")
-            ;
-
-            po::variables_map vm;
-            po::store(po::parse_command_line(inArgC, inArgVec, desc), vm);
-            po::notify(vm);
-
-            outputIsCoefOnly = vm.count("coef") > 0;
-
-            if (vm.count("help") ||
-                vm.count("coef") + vm.count("table") != 1) {
-                
-                std::cout << desc << "\n";
-                exit(EXIT_FAILURE);
-            }
-        } catch(std::exception& e) {
-            std::cerr << "error: " << e.what() << "\n";
-            exit(EXIT_FAILURE);
-        } catch(...) {
-            std::cerr << "Exception of unknown type!\n";
-            exit(EXIT_FAILURE);
-        }
-        
-        randomNoGenerator.seed(coefSeed);
-        for (uint16_t i = 0; i < numIndVars; i++)
+        randomNoGenerator.seed(args.coefSeed);
+        for (uint16_t i = 0; i < args.numIndVars; i++)
             coef.push_back(uniformVariate());
     }
 
     void printTable() {
-        randomNoGenerator.seed(tableSeed);
+        randomNoGenerator.seed(args.tableSeed);
         
         // preallocate vector
-        std::vector<double> row(numIndVars + 1);
+        std::vector<double> row(args.numIndVars + 1);
         
-        for (uint64_t i = 0; i < numRows; i++) {
+        for (uint64_t i = 0; i < args.numRows; i++) {
             double dotProduct = 0;
             
-            for (uint16_t j = 0; j < numIndVars; j++) {
+            for (uint16_t j = 0; j < args.numIndVars; j++) {
                 row[j] = uniformVariate();
                 dotProduct += coef[j] * row[j];
             }
-            row[numIndVars] = dotProduct + normalVariate();
+            row[args.numIndVars] = dotProduct + normalVariate();
             printTableRow(row);
         }
     }
     
     int run() {
-        if (outputIsCoefOnly)
+        if (args.outputIsCoefOnly)
             printCoef(coef);
         else
             printTable();
