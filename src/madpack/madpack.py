@@ -644,7 +644,7 @@ def parseConnectionStr(connectionStr):
            <tt>[username[/password]@][hostname][:port][/database]</tt>
     
     Separation characters (/@:) and the backslash (\) need to be escaped.
-    @returns A tuple (username, password, hostname, port, database). Field not
+    @returns A tuple (username, password, hostname, port, database). Fields not
              specified will be None.
     """
     match = re.search(
